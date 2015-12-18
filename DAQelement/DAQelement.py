@@ -1,8 +1,8 @@
 from .. import signal
 
 class DAQelement:
-    def __init__(self):
-        self._output = None
+    def __init__(self,name):
+        self.name = None
 
     def process(self,s):
         if not isinstance(s,signal.signal):
