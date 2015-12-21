@@ -31,7 +31,7 @@ class DAQelement:
 class PMT(DAQelement):
 
     def __init__(self,name='',ndynodes=None,delta=None,sigma=None,transittime=None):
-        self._name = name
+        DAQelement.__init__(self,name=name)
         self._ndynodes = ndynodes
         self._delta = delta
         self._sigma = sigma

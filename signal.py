@@ -1,4 +1,4 @@
-'''signal class'''
+'''signal module'''
 
 class signal:
     '''signal class'''
@@ -14,6 +14,7 @@ class generator:
         self._name = name
         self._types = types
         self._pdfs = None
+        self._energydist = None
 
     def __repr__(self):
         return self._name
@@ -31,4 +32,8 @@ class generator:
         s += '\n'
         return s
 
+class scintillator(generator):
     
+    def __init__(self,name = '', types=['gamma','neutron']):
+        generator.__init__(self,name=name,types=types)
+        
