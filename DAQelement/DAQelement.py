@@ -10,19 +10,17 @@ class DAQelement:
     def __repr__(self):
         return self._name
 
-    def test(self):
-        att = [(a,str(getattr(self,a))) for a in dir(self) if not callable(getattr(self,a)) and not a.startswith('__')]
-        return att
-
     def __str__(self):
         att = [(a,str(getattr(self,a))) for a in dir(self) if not callable(getattr(self,a)) and not a.startswith('__')]
         s = ''
         for a in att:
+            s += '\n'
             if a[0][0] == '_':
                 s += a[0][1:] 
             else:
                 s += a[0]
-            s+= ' = ' + str(a[1]) + '\n' 
+            s += ' = ' + str(a[1])
+        s += '\n'
         return s
 
     def process(self,s):
