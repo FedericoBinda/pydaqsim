@@ -1,6 +1,7 @@
 from .. import signal
 import numpy as np
 from scipy import stats, constants
+from scipy import signal as spsig
 
 class DAQelement:
 
@@ -82,3 +83,21 @@ class pmt(DAQelement):
     
         newpulse *= constants.e / (dt*1.e-9)
         s.amplitude = newpulse
+
+class cable(DAQelement):
+    '''cable class'''
+    def __init__(self,name='',cutoff=None,impedance=None,noise_lvl=None):
+        DAQelement.__init__(self,name=name)
+        self._cutoff = cutoff
+        self._impedance = impedance
+        self._noise_lvl = noise_lvl
+
+    def process(self,s,t):
+
+        sampling_freq = 1./(t[1]-t[0]) # GHz
+        Wn = (1./(2*np.pi))*(self._cutoff/sampling_freq)
+        b, a = spsig.butter(1, Wn, 'low')
+
+        noise = np.random.normal(0,self._noise_lvl,len(s.amplitude))
+        s.amplitude = spsig.lfilter(b,a,s.amplitude) * self._impedance + noise
+        
