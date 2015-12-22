@@ -101,3 +101,47 @@ class cable(DAQelement):
         noise = np.random.normal(0,self._noise_lvl,len(s.amplitude))
         s.amplitude = spsig.lfilter(b,a,s.amplitude) * self._impedance + noise
         
+class digitizer(DAQelement):
+    '''digitizer class'''
+    def __init__(self,name='',sampfreq=None,nbits=None,minV=None,maxV=None,
+                 th_lvl=None,th_on=False):
+        DAQelement.__init__(self,name=name)
+        self._sampfreq = sampfreq
+        self._nbits = nbits
+        self._minV = minV
+        self._maxV = maxV
+        self._th_lvl = th_lvl
+        self._th_on = th_on
+        self.update_values()
+
+    def update_values(self):
+        try:
+            self._codes = np.linspace(self._minV,self._maxV,2**self._nbits)
+            self._dV = (self._maxV- self._minV) / 2**self._nbits
+            self._th_V = self._th_lvl * self._dV
+        except:
+            self._codes = None
+            self._dV = None
+            self._th_V = None
+            
+
+    def process(self,s,t):
+
+        dt = t[1] - t[0]
+        freq = 1. / dt
+        ratio = int(freq / self._sampfreq)
+
+        if self._th_on:
+            try:
+                trigger = np.where(s.amplitude >= self._th_V)[0][0]
+            except IndexError:
+                s.amplitude = np.array([])
+                return
+            pretrig = s.amplitude[trigger::-ratio][::-1]
+            posttrig = s.amplitude[trigger+ratio::ratio]
+            newpulse = np.append(pretrig,posttrig)
+        else:
+            newpulse = s.amplitude[::ratio]
+            
+        s.amplitude = np.digitize(newpulse, self._codes)
+
