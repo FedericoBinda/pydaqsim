@@ -28,7 +28,7 @@ class DAQelement:
             raise TypeError('Wrong object type parsed to function. Function expected a "signal" object.')
         s.amplitude = 2*s.amplitude
 
-class PMT(DAQelement):
+class pmt(DAQelement):
 
     def __init__(self,name='',ndynodes=None,delta=None,sigma=None,transittime=None):
         DAQelement.__init__(self,name=name)
@@ -38,7 +38,7 @@ class PMT(DAQelement):
         self._transittime = transittime
 
     def process(self,s,t):
-        '''s.amplitude should be time arrival at the PMT'''
+        '''s.amplitude should be time arrival at the pmt'''
 
         if not isinstance(s,signal.signal):
             raise TypeError('Wrong object type parsed to function. Function expected a "signal" object.')

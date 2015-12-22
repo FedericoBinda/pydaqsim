@@ -12,7 +12,7 @@ class signal:
 
 class generator:
     '''signal generator'''
-    def __init__(self,name = '', types=['gamma','neutron']):
+    def __init__(self,name = '', types=[]):
         self._name = name
         self._types = types
         self._timedist = {}
@@ -46,6 +46,9 @@ class scintillator(generator):
         self._qeff = qeff
 
     def generate(self, Type, n):
+        '''
+        Generates n scintillator pulses of type Type.
+        '''
         k = self._k
         lc = self._lc
         qeff = self._qeff
@@ -79,3 +82,73 @@ class scintillator(generator):
         mysignals = [signal(Type=Type,amplitude=np.random.choice(t, numphots, p = amp)) for numphots in mynphots]
     
         return mysignals
+
+    def set_energy_dist(self,fname):
+        '''
+        Reads the energy distributions file and saves the distributions
+        in the scintillator variables.
+        The file must contain the particle type at the beginning
+        of each energy distribution.
+        Comment lines start with a hash sign (#).
+        '''
+        infile = open(fname,'r')
+        lines = infile.readlines()
+        infile.close()
+        
+        for line in lines:
+            if line[0] == '#':
+                continue
+            spl = line.split()
+            if len(spl) == 1:
+                cur_type = spl[0]
+                if not cur_type in self._types:
+                    self._types.append(cur_type)
+                    self._energydist[cur_type] = {'energy' : [] , 'prob' : []}
+                    
+            elif len(spl) == 2:
+                self._energydist[cur_type]['energy'].append(float(spl[0]))
+                self._energydist[cur_type]['prob'].append(float(spl[1]))
+
+        for t in self._types:
+            self._energydist[t]['energy'] = np.array(self._energydist[t]['energy'])
+            self._energydist[t]['prob'] = np.array(self._energydist[t]['prob'])
+            self._energydist[t]['prob'] /= sum(self._energydist[t]['prob'])
+
+    def set_time_dist(self,fname,taxis):
+        '''
+        Reads the time distributions file and saves the distributions
+        in the scintillator variables.
+        The file must contain the particle type at the beginning
+        of each time distribution.
+        The distribtions are give as exponential decay coefficients.
+        Comment lines start with a hash sign (#).
+        '''
+        infile = open(fname,'r')
+        lines = infile.readlines()
+        infile.close()
+
+        coeff_dict = {}
+
+        for line in lines:
+            if line[0] == '#':
+                continue
+            spl = line.split()
+            if len(spl) == 1:
+                cur_type = spl[0]
+                if not cur_type in self._types:
+                    self._types.append(cur_type)
+                    self._timedist[cur_type] = {'time' : [] , 'prob': []}
+                coeff_dict[cur_type] = []
+            elif len(spl) == 2:
+                coeff_dict[cur_type].append((float(spl[0]),float(spl[1])))
+
+        for t in self._types:
+            self._timedist[t]['time'] = taxis
+            self._timedist[t]['prob'] = self._scintillator_function(coeff_dict[t],taxis)
+        
+        
+    def _scintillator_function(self,coeff,taxis):
+        amp = [ (c[1])*np.exp(-taxis/c[0]) for c in coeff ]
+        amp = sum(amp)
+        amp = amp / sum(amp) # normalization
+        return amp
