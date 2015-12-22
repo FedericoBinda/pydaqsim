@@ -27,7 +27,6 @@ class DAQelement:
     def process(self,s):
         if not isinstance(s,signal.signal):
             raise TypeError('Wrong object type parsed to function. Function expected a "signal" object.')
-        s.amplitude = 2*s.amplitude
 
 class pmt(DAQelement):
 
@@ -41,8 +40,7 @@ class pmt(DAQelement):
     def process(self,s,t):
         '''s.amplitude should be time arrival at the pmt'''
 
-        if not isinstance(s,signal.signal):
-            raise TypeError('Wrong object type parsed to function. Function expected a "signal" object.')
+        DAQelement.process(self,s)
         
         ndynodes = self._ndynodes
         delta = self._delta
@@ -94,6 +92,8 @@ class cable(DAQelement):
 
     def process(self,s,t):
 
+        DAQelement.process(self,s)
+
         sampling_freq = 1./(t[1]-t[0]) # GHz
         Wn = (1./(2*np.pi))*(self._cutoff/sampling_freq)
         b, a = spsig.butter(1, Wn, 'low')
@@ -127,6 +127,8 @@ class digitizer(DAQelement):
 
     def process(self,s,t):
 
+        DAQelement.process(self,s)
+
         dt = t[1] - t[0]
         freq = 1. / dt
         ratio = int(freq / self._sampfreq)
@@ -145,3 +147,25 @@ class digitizer(DAQelement):
             
         s.amplitude = np.digitize(newpulse, self._codes)
 
+class chain:
+    'chain class'
+    def __init__(self,name='',elements=[]):
+        self._name = name
+        self._elements = elements
+
+    def add_element(self,e):
+        if not isinstance(e,DAQelement):
+            raise TypeError('Wrong object type parsed to function. Function expected a "DAQelement" object.')
+        self._elements.append(e)
+
+    def pop_element(self,index):
+        self._elemenents.pop(index)
+
+    def process(self,s,t):
+        if type(s) is list:
+            for si in s:
+                for e in self._elements:
+                    e.process(si,t)
+        else:
+            for e in self._elements:
+                e.process(s,t)
